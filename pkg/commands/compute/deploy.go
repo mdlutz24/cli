@@ -173,6 +173,7 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 		dictionaries *setup.Dictionaries
 		loggers      *setup.Loggers
 		objectStores *setup.ObjectStores
+		secretStores *setup.SecretStores
 	)
 
 	if newService {
@@ -210,6 +211,17 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 			ServiceID:      serviceID,
 			ServiceVersion: serviceVersion.Number,
 			Setup:          c.Manifest.File.Setup.ObjectStores,
+			Stdin:          in,
+			Stdout:         out,
+		}
+
+		secretStores = &setup.SecretStores{
+			APIClient:      apiClient,
+			AcceptDefaults: c.Globals.Flag.AcceptDefaults,
+			NonInteractive: c.Globals.Flag.NonInteractive,
+			ServiceID:      serviceID,
+			ServiceVersion: serviceVersion.Number,
+			Setup:          c.Manifest.File.Setup.SecretStores,
 			Stdin:          in,
 			Stdout:         out,
 		}
@@ -262,6 +274,14 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 				return fmt.Errorf("error configuring service object stores: %w", err)
 			}
 		}
+
+		if secretStores.Predefined() {
+			err = secretStores.Configure()
+			if err != nil {
+				errLogService(errLog, err, serviceID, serviceVersion.Number)
+				return fmt.Errorf("error configuring service secret stores: %w", err)
+			}
+		}
 	}
 
 	text.Break(out)
@@ -304,8 +324,9 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 		backends.Progress = progress
 		dictionaries.Progress = progress
 		objectStores.Progress = progress
+		secretStores.Progress = progress
 
-		if err := backends.Create(); err != nil {
+		if err = backends.Create(); err != nil {
 			errLog.AddWithContext(err, map[string]any{
 				"Accept defaults": c.Globals.Flag.AcceptDefaults,
 				"Auto-yes":        c.Globals.Flag.AutoYes,
@@ -316,7 +337,7 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 			return err
 		}
 
-		if err := dictionaries.Create(); err != nil {
+		if err = dictionaries.Create(); err != nil {
 			errLog.AddWithContext(err, map[string]any{
 				"Accept defaults": c.Globals.Flag.AcceptDefaults,
 				"Auto-yes":        c.Globals.Flag.AutoYes,
@@ -327,7 +348,18 @@ func (c *DeployCommand) Exec(in io.Reader, out io.Writer) (err error) {
 			return err
 		}
 
-		if err := objectStores.Create(); err != nil {
+		if err = objectStores.Create(); err != nil {
+			errLog.AddWithContext(err, map[string]any{
+				"Accept defaults": c.Globals.Flag.AcceptDefaults,
+				"Auto-yes":        c.Globals.Flag.AutoYes,
+				"Non-interactive": c.Globals.Flag.NonInteractive,
+				"Service ID":      serviceID,
+				"Service Version": serviceVersion.Number,
+			})
+			return err
+		}
+
+		if err = secretStores.Create(); err != nil {
 			errLog.AddWithContext(err, map[string]any{
 				"Accept defaults": c.Globals.Flag.AcceptDefaults,
 				"Auto-yes":        c.Globals.Flag.AutoYes,

@@ -222,6 +222,7 @@ type Setup struct {
 	Dictionaries map[string]*SetupDictionary  `toml:"dictionaries,omitempty"`
 	Loggers      map[string]*SetupLogger      `toml:"log_endpoints,omitempty"`
 	ObjectStores map[string]*SetupObjectStore `toml:"object_stores,omitempty"`
+	SecretStores map[string]*SetupSecretStore `toml:"secret_stores,omitempty"`
 }
 
 // SetupBackend represents a '[setup.backends.<T>]' instance.
@@ -257,6 +258,18 @@ type SetupObjectStore struct {
 // SetupObjectStoreItems represents a '[setup.object_stores.<T>.items]' instance.
 type SetupObjectStoreItems struct {
 	Value       string `toml:"value,omitempty"`
+	Description string `toml:"description,omitempty"`
+}
+
+// SetupSecretStore represents a '[setup.secret_stores.<T>]' instance.
+type SetupSecretStore struct {
+	Items       map[string]SetupSecretStoreItems `toml:"items,omitempty"`
+	Description string                           `toml:"description,omitempty"`
+}
+
+// SetupSecretStoreItems represents a '[setup.secret_stores.<T>.items]' instance.
+type SetupSecretStoreItems struct {
+	// SecretStoreItems intentionally omit a predefined "value".
 	Description string `toml:"description,omitempty"`
 }
 
