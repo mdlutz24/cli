@@ -18,7 +18,7 @@ func NewRootCommand(parent cmd.Registerer, g *global.Data) *RootCommand {
 		},
 	}
 
-	c.CmdClause = parent.Command(RootNameSecret, "Manipulate Fastly Secret Store secrets")
+	c.CmdClause = parent.Command(RootNameSecret, "")
 
 	return &c
 }
